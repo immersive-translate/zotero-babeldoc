@@ -26,6 +26,12 @@ declare namespace _ZoteroTypes {
       "shortcutTaskManager": string;
       "layoutModel": string;
       "skipNetworkWarning": boolean;
+      "selectionTranslationDeepSeekApiKey": string;
+      "selectionTranslationModel": string;
+      "selectionTranslationThinkingMode": string;
+      "selectionTranslationAutoTranslateText": boolean;
+      "selectionTranslationAutoWriteAnnotationComment": boolean;
+      "selectionTranslationAutoTranslateNewAnnotations": boolean;
     };
   }
 }

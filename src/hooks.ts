@@ -23,6 +23,11 @@ import { showTaskManager } from "./modules/translate/task-manager";
 import { initTasks } from "./modules/translate/store";
 import { getPref } from "./utils/prefs";
 import { removeKnownMenuElements } from "./utils/menu";
+import {
+  handleSelectionTranslationItemAdded,
+  registerSelectionTranslation,
+  unregisterSelectionTranslation,
+} from "./modules/selection-translation";
 
 async function onStartup() {
   await Promise.all([
@@ -38,6 +43,8 @@ async function onStartup() {
   registerNotifier(["item", "file"]);
 
   registerShortcuts();
+
+  registerSelectionTranslation();
 
   initTasks();
 
@@ -105,6 +112,7 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 }
 
 function onShutdown(): void {
+  unregisterSelectionTranslation();
   // 关闭前保存翻译数据
   saveTranslationData();
   Zotero.getMainWindows?.().forEach((win) => {
@@ -127,7 +135,10 @@ async function onNotify(
   ids: Array<string | number>,
   extraData: { [key: string]: any },
 ) {
-  ztoolkit.log("notify", event, type, ids, extraData);
+  ztoolkit.log("notify", event, type, ids);
+  if (event === "add" && type === "item") {
+    handleSelectionTranslationItemAdded(ids, extraData);
+  }
   const isAutoTranslateEnabled = getPref("autoTranslate");
   ztoolkit.log("isAutoTranslateEnabled", isAutoTranslateEnabled);
   if (!isAutoTranslateEnabled) {

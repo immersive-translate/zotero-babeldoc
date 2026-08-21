@@ -21,6 +21,11 @@ import {
   isBareShiftLetterShortcut,
   normalizeShortcutString,
 } from "./shortcuts";
+import {
+  normalizeSelectionTranslationModel,
+  normalizeSelectionTranslationThinkingMode,
+  type SelectionTranslationThinkingMode,
+} from "./selection-translation/provider";
 
 type ShortcutInputConfig = {
   inputId: string;
@@ -28,6 +33,15 @@ type ShortcutInputConfig = {
   prefKey: "shortcutTranslate" | "shortcutTaskManager";
   otherPrefKey: "shortcutTranslate" | "shortcutTaskManager";
 };
+
+const selectionTranslationThinkingModeOptions: Array<{
+  label: string;
+  value: SelectionTranslationThinkingMode;
+}> = [
+  { label: "selection-translation-thinking-mode-disabled", value: "disabled" },
+  { label: "selection-translation-thinking-mode-high", value: "high" },
+  { label: "selection-translation-thinking-mode-max", value: "max" },
+];
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({
@@ -57,6 +71,52 @@ function buildPrefsPane() {
   if (!doc) {
     return;
   }
+  ztoolkit.UI.replaceElement(
+    {
+      tag: "menulist",
+      id: `${config.addonRef}-selection-translation-thinking-mode`,
+      attributes: {
+        value: normalizeSelectionTranslationThinkingMode(
+          getPref("selectionTranslationThinkingMode"),
+        ),
+        native: "true",
+      },
+      styles: {
+        maxWidth: "250px",
+      },
+      children: [
+        {
+          tag: "menupopup",
+          children: selectionTranslationThinkingModeOptions.map((item) => {
+            return {
+              tag: "menuitem",
+              attributes: {
+                label: getString(item.label),
+                value: item.value,
+              },
+            };
+          }),
+        },
+      ],
+      listeners: [
+        {
+          type: "command",
+          listener: (e: Event) => {
+            setPref(
+              "selectionTranslationThinkingMode",
+              normalizeSelectionTranslationThinkingMode(
+                (e.target as XUL.MenuList).value,
+              ),
+            );
+          },
+        },
+      ],
+    },
+    doc.querySelector(
+      `#${config.addonRef}-selection-translation-thinking-mode-placeholder`,
+    )!,
+  );
+
   ztoolkit.UI.replaceElement(
     {
       tag: "menulist",
@@ -339,6 +399,37 @@ function bindPrefEvents() {
       ztoolkit.log(e);
       setPref("authkey", (e.target as HTMLInputElement).value);
     });
+
+  const selectionTranslationApiKeyInput =
+    addon.data.prefs!.window.document?.querySelector<HTMLInputElement>(
+      `#zotero-prefpane-${config.addonRef}-selection-translation-deepseek-api-key`,
+    );
+  if (selectionTranslationApiKeyInput) {
+    selectionTranslationApiKeyInput.value = getPref(
+      "selectionTranslationDeepSeekApiKey",
+    );
+    selectionTranslationApiKeyInput.addEventListener("change", (e: Event) => {
+      setPref(
+        "selectionTranslationDeepSeekApiKey",
+        (e.target as HTMLInputElement).value,
+      );
+    });
+  }
+
+  const selectionTranslationModelInput =
+    addon.data.prefs!.window.document?.querySelector<HTMLInputElement>(
+      `#zotero-prefpane-${config.addonRef}-selection-translation-model`,
+    );
+  if (selectionTranslationModelInput) {
+    selectionTranslationModelInput.value = getPref("selectionTranslationModel");
+    selectionTranslationModelInput.addEventListener("change", (e: Event) => {
+      const model = normalizeSelectionTranslationModel(
+        (e.target as HTMLInputElement).value,
+      );
+      setPref("selectionTranslationModel", model);
+      selectionTranslationModelInput.value = model;
+    });
+  }
 
   addon.data
     .prefs!.window.document?.querySelector(
